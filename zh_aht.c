@@ -134,7 +134,7 @@ esp_err_t zh_aht_read(float *humidity, float *temperature)
 #endif
     if (esp_err != ESP_OK)
     {
-        ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
+        ESP_LOGE(TAG, "AHT read fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
     vTaskDelay(MEASUREMENT_TIME / portTICK_PERIOD_MS);
@@ -154,7 +154,7 @@ esp_err_t zh_aht_read(float *humidity, float *temperature)
 #endif
     if (esp_err != ESP_OK)
     {
-        ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
+        ESP_LOGE(TAG, "AHT read fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
     if ((sensor_data[0] & 0b01000000) != 0)
@@ -164,7 +164,7 @@ esp_err_t zh_aht_read(float *humidity, float *temperature)
     }
     if (_calc_crc(sensor_data, I2C_DATA_SIZE - 1) != sensor_data[6])
     {
-        ESP_LOGE(TAG, "DHT read fail. Invalid CRC.");
+        ESP_LOGE(TAG, "AHT read fail. Invalid CRC.");
         return ESP_ERR_INVALID_CRC;
     }
     *humidity = (((((uint32_t)sensor_data[1]) << 16) | (((uint32_t)sensor_data[2]) << 8) | (((uint32_t)sensor_data[3]) << 0)) >> 4) / 1048576.0 * 100.0;
@@ -196,7 +196,7 @@ esp_err_t zh_aht_reset(void)
 #endif
     if (esp_err != ESP_OK)
     {
-        ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
+        ESP_LOGE(TAG, "AHT reset fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
     vTaskDelay(RESET_TIME / portTICK_PERIOD_MS);
