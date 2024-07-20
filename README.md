@@ -1,4 +1,4 @@
-# ESP32 ESP-IDF and ESP8266 RTOS SDK component for AHT20/AHT21 humidity & temperature sensor
+# ESP32 ESP-IDF and ESP8266 RTOS SDK component for AHT10/AHT15/AHT20/AHT21/AHT25/AHT30 humidity & temperature sensor
 
 ## Tested on
 
