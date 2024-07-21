@@ -10,11 +10,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define ZH_AHT_INIT_CONFIG_DEFAULT()       \
-    {                                      \
-        .sensor_type = ZH_AHT2X,           \
-        .i2c_address = ZH_I2C_ADDRESS_LOW, \
-        .i2c_port = 0                      \
+#define ZH_AHT_INIT_CONFIG_DEFAULT() \
+    {                                \
+        .i2c_port = 0                \
     }
 
 #ifdef __cplusplus
@@ -24,16 +22,6 @@ extern "C"
 
     typedef struct // Structure for initial initialization of AHT sensor.
     {
-        enum // Sensor type.
-        {
-            ZH_AHT1X, // AHT10/AHT15.
-            ZH_AHT2X  // AHT20/AHT21/AHT25/AHT30.
-        } sensor_type;
-        enum // Sensor I2C address.
-        {
-            ZH_I2C_ADDRESS_HIGH = 0x39, // Address pin connected to VCC. AHT10 only.
-            ZH_I2C_ADDRESS_LOW = 0x38   // AHT15/AHT20/AHT21/AHT25/AHT30. AHT10 address pin connected to GND.
-        } i2c_address;
         bool i2c_port; // I2C port.
 #ifndef CONFIG_IDF_TARGET_ESP8266
         i2c_master_bus_handle_t i2c_handle; // Unique I2C bus handle.
