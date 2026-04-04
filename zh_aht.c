@@ -1,15 +1,15 @@
 #include "zh_aht.h"
 
-#define I2C_MAX_DATA_SIZE 7                    // Sensor maximum data size (in bytes).
-#define MEASUREMENT_TIME 80                    // Sensor measurement time (in milliseconds).
-#define RESET_TIME 20                          // Sensor reset time (in milliseconds).
-#define I2C_ADDRESS 0x38                       // Sensor I2C address.
-#define I2C_DATA_READ_COMMAND 0xAC, 0x33, 0x00 // Command for read sensor data (temperature and humidity).
-#define I2C_RESET_COMMAND 0xBA                 // Command for reset sensor.
-#define I2C_INIT_COMMAND 0x00, 0x08, 0x00      // Command for initialize sensor. First byte is depend of sensor type.
-#define I2C_INIT_AHT1X_FIRST_BYTE 0xE1         // First byte for command for initialize sensor. For AHT1X series.
-#define I2C_INIT_AHT2X_FIRST_BYTE 0xBE         // First byte for command for initialize sensor. For AHT2X/3X series.
-#define I2C_STATUS_READ_COMMAND 0x71           // Command for read sensor status.
+#define I2C_MAX_DATA_SIZE 7                    /*!< Sensor maximum data size (in bytes). */
+#define MEASUREMENT_TIME 80                    /*!< Sensor measurement time (in milliseconds). */
+#define RESET_TIME 20                          /*!< Sensor reset time (in milliseconds). */
+#define I2C_ADDRESS 0x38                       /*!< Sensor I2C address. */
+#define I2C_DATA_READ_COMMAND 0xAC, 0x33, 0x00 /*!< Command for read sensor data (temperature and humidity). */
+#define I2C_RESET_COMMAND 0xBA                 /*!< Command for reset sensor. */
+#define I2C_INIT_COMMAND 0x00, 0x08, 0x00      /*!< Command for initialize sensor. First byte is depend of sensor type. */
+#define I2C_INIT_AHT1X_FIRST_BYTE 0xE1         /*!< First byte for command for initialize sensor. For AHT1X series. */
+#define I2C_INIT_AHT2X_FIRST_BYTE 0xBE         /*!< First byte for command for initialize sensor. For AHT2X/3X series. */
+#define I2C_STATUS_READ_COMMAND 0x71           /*!< Command for read sensor status. */
 
 static zh_aht_init_config_t _init_config = {0};
 static bool _is_initialized = false;
@@ -188,7 +188,7 @@ esp_err_t zh_aht_read(float *humidity, float *temperature)
         ESP_LOGE(TAG, "AHT read fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
-    if ((sensor_data[0] & 0x40) != 0) // If sensor is busy in measurement.
+    if ((sensor_data[0] & 0x40) != 0)
     {
         ESP_LOGE(TAG, "AHT read fail. Timeout exceeded.");
         return ESP_ERR_TIMEOUT;
