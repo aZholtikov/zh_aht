@@ -6,20 +6,16 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
-#ifdef CONFIG_IDF_TARGET_ESP8266
-#include "driver/i2c.h"
-#else
 #include "driver/i2c_master.h"
-#endif
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+// #include "freertos/task.h"
 
 /**
  * @brief AHT sensor initial default values.
  */
 #define ZH_AHT_INIT_CONFIG_DEFAULT() \
     {                                \
-        .i2c_port = 0}
+    }
 
 #ifdef __cplusplus
 extern "C"
@@ -31,10 +27,7 @@ extern "C"
      */
     typedef struct
     {
-        bool i2c_port; /*!< I2C port. */
-#ifndef CONFIG_IDF_TARGET_ESP8266
         i2c_master_bus_handle_t i2c_handle; /*!< Unique I2C bus handle. */
-#endif
     } zh_aht_init_config_t;
 
     /**

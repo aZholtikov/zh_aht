@@ -1,13 +1,12 @@
-# ESP32 ESP-IDF and ESP8266 RTOS SDK component for AHT10/AHT15/AHT20/AHT21/AHT25/AHT30 humidity & temperature sensor
+# ESP32 ESP-IDF component for AHT family humidity & temperature sensor
 
 ## Tested on
 
-1. ESP8266 RTOS_SDK v3.4
-2. ESP32 ESP-IDF v5.2
+1. ESP32 ESP-IDF v5.2
 
 ## Features
 
-1. Autodetect sensor type.
+1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30.
 
 ## Using
 
@@ -35,35 +34,19 @@ Reading the sensor:
 
 void app_main(void)
 {
-    esp_log_level_set("zh_aht", ESP_LOG_NONE);
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_config_t i2c_config = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = GPIO_NUM_4, // In accordance with used chip.
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = GPIO_NUM_5, // In accordance with used chip.
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-    };
-    i2c_driver_install(I2C_PORT, i2c_config.mode);
-    i2c_param_config(I2C_PORT, &i2c_config);
-#else
+    esp_log_level_set("zh_aht", ESP_LOG_ERROR);
     i2c_master_bus_config_t i2c_bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
-        .scl_io_num = GPIO_NUM_22, // In accordance with used chip.
-        .sda_io_num = GPIO_NUM_21, // In accordance with used chip.
+        .scl_io_num = GPIO_NUM_22,
+        .sda_io_num = GPIO_NUM_21,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t i2c_bus_handle;
     i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
-#endif
     zh_aht_init_config_t aht_init_config = ZH_AHT_INIT_CONFIG_DEFAULT();
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    aht_init_config.i2c_port = I2C_PORT;
-#else
     aht_init_config.i2c_handle = i2c_bus_handle;
-#endif
     zh_aht_init(&aht_init_config);
     float humidity = 0.0;
     float temperature = 0.0;
@@ -76,5 +59,3 @@ void app_main(void)
     }
 }
 ```
-
-Any [feedback](mailto:github@azholtikov.ru) will be gladly accepted.

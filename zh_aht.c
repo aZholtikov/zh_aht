@@ -13,9 +13,7 @@
 
 static zh_aht_init_config_t _init_config = {0};
 static bool _is_initialized = false;
-#ifndef CONFIG_IDF_TARGET_ESP8266
 static i2c_master_dev_handle_t _aht_handle = {0};
-#endif
 
 static const char *TAG = "zh_aht";
 
@@ -30,7 +28,6 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config)
         return ESP_ERR_INVALID_ARG;
     }
     _init_config = *config;
-#ifndef CONFIG_IDF_TARGET_ESP8266
     i2c_device_config_t aht_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = I2C_ADDRESS,
@@ -42,59 +39,28 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config)
         ESP_LOGE(TAG, "AHT initialization fail. Sensor not connected or not responded.");
         return ESP_ERR_NOT_FOUND;
     }
-#endif
     esp_err_t err = ESP_OK;
     uint8_t status_read_command = I2C_STATUS_READ_COMMAND;
     uint8_t sensor_data = 0;
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_cmd_handle_t i2c_cmd_handle = i2c_cmd_link_create();
-    i2c_master_start(i2c_cmd_handle);
-    i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(i2c_cmd_handle, status_read_command, true);
-    i2c_master_stop(i2c_cmd_handle);
-    err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(i2c_cmd_handle);
-#else
     err = i2c_master_transmit(_aht_handle, &status_read_command, sizeof(status_read_command), 1000 / portTICK_PERIOD_MS);
-#endif
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_cmd_handle = i2c_cmd_link_create();
-    i2c_master_start(i2c_cmd_handle);
-    i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_READ, true);
-    i2c_master_read_byte(i2c_cmd_handle, &sensor_data, I2C_MASTER_NACK);
-    i2c_master_stop(i2c_cmd_handle);
-    err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(i2c_cmd_handle);
-#else
     err = i2c_master_receive(_aht_handle, &sensor_data, sizeof(sensor_data), 1000 / portTICK_PERIOD_MS);
-#endif
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
-    if ((sensor_data & 0x08) == 0) // If sensor is not calibrated.
+    if ((sensor_data & 0x08) == 0)
     {
         uint8_t init_command[] = {I2C_INIT_COMMAND};
         uint8_t check_command = I2C_INIT_AHT2X_FIRST_BYTE;
         bool is_first_check = false;
-    INIT_SENSOR:;
-#ifdef CONFIG_IDF_TARGET_ESP8266
-        i2c_cmd_handle = i2c_cmd_link_create();
-        i2c_master_start(i2c_cmd_handle);
-        i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_WRITE, true);
-        i2c_master_write_byte(i2c_cmd_handle, check_command, true);
-        i2c_master_stop(i2c_cmd_handle);
-        err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-        i2c_cmd_link_delete(i2c_cmd_handle);
-#else
+    INIT_SENSOR:
         err = i2c_master_transmit(_aht_handle, &check_command, sizeof(check_command), 1000 / portTICK_PERIOD_MS);
-#endif
         if (err != ESP_OK)
         {
             if (err == ESP_ERR_INVALID_STATE && is_first_check == false)
@@ -110,19 +76,7 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config)
             }
         }
         init_command[0] = check_command;
-#ifdef CONFIG_IDF_TARGET_ESP8266
-        i2c_cmd_handle = i2c_cmd_link_create();
-        i2c_master_start(i2c_cmd_handle);
-        i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_WRITE, true);
-        i2c_master_write_byte(i2c_cmd_handle, init_command[0], true);
-        i2c_master_write_byte(i2c_cmd_handle, init_command[1], true);
-        i2c_master_write_byte(i2c_cmd_handle, init_command[2], true);
-        i2c_master_stop(i2c_cmd_handle);
-        err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-        i2c_cmd_link_delete(i2c_cmd_handle);
-#else
         err = i2c_master_transmit(_aht_handle, init_command, sizeof(init_command), 1000 / portTICK_PERIOD_MS);
-#endif
         if (err != ESP_OK)
         {
             ESP_LOGE(TAG, "AHT initialization fail. I2C driver error at line %d.", __LINE__);
@@ -150,39 +104,14 @@ esp_err_t zh_aht_read(float *humidity, float *temperature)
     esp_err_t err = ESP_OK;
     uint8_t sensor_data[I2C_MAX_DATA_SIZE] = {0};
     uint8_t data_read_command[] = {I2C_DATA_READ_COMMAND};
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_cmd_handle_t i2c_cmd_handle = i2c_cmd_link_create();
-    i2c_master_start(i2c_cmd_handle);
-    i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(i2c_cmd_handle, data_read_command[0], true);
-    i2c_master_write_byte(i2c_cmd_handle, data_read_command[1], true);
-    i2c_master_write_byte(i2c_cmd_handle, data_read_command[2], true);
-    i2c_master_stop(i2c_cmd_handle);
-    err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(i2c_cmd_handle);
-#else
     err = i2c_master_transmit(_aht_handle, data_read_command, sizeof(data_read_command), 1000 / portTICK_PERIOD_MS);
-#endif
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "AHT read fail. I2C driver error at line %d.", __LINE__);
         return ESP_ERR_INVALID_RESPONSE;
     }
     vTaskDelay(MEASUREMENT_TIME / portTICK_PERIOD_MS);
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_cmd_handle = i2c_cmd_link_create();
-    i2c_master_start(i2c_cmd_handle);
-    i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_READ, true);
-    for (uint8_t i = 0; i < sizeof(sensor_data); ++i)
-    {
-        i2c_master_read_byte(i2c_cmd_handle, &sensor_data[i], i == (sizeof(sensor_data) - 1) ? I2C_MASTER_NACK : I2C_MASTER_ACK);
-    }
-    i2c_master_stop(i2c_cmd_handle);
-    err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(i2c_cmd_handle);
-#else
     err = i2c_master_receive(_aht_handle, sensor_data, sizeof(sensor_data), 1000 / portTICK_PERIOD_MS);
-#endif
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "AHT read fail. I2C driver error at line %d.", __LINE__);
@@ -217,17 +146,7 @@ esp_err_t zh_aht_reset(void)
     }
     esp_err_t err = ESP_OK;
     uint8_t reset_command = I2C_RESET_COMMAND;
-#ifdef CONFIG_IDF_TARGET_ESP8266
-    i2c_cmd_handle_t i2c_cmd_handle = i2c_cmd_link_create();
-    i2c_master_start(i2c_cmd_handle);
-    i2c_master_write_byte(i2c_cmd_handle, I2C_ADDRESS << 1 | I2C_MASTER_WRITE, true);
-    i2c_master_write_byte(i2c_cmd_handle, reset_command, true);
-    i2c_master_stop(i2c_cmd_handle);
-    err = i2c_master_cmd_begin(_init_config.i2c_port, i2c_cmd_handle, 1000 / portTICK_PERIOD_MS);
-    i2c_cmd_link_delete(i2c_cmd_handle);
-#else
     err = i2c_master_transmit(_aht_handle, &reset_command, sizeof(reset_command), 1000 / portTICK_PERIOD_MS);
-#endif
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "AHT reset fail. I2C driver error at line %d.", __LINE__);
