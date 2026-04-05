@@ -14,6 +14,7 @@
  */
 #define ZH_AHT_INIT_CONFIG_DEFAULT() \
     {                                \
+        .i2c_frequency = 400000,     \
         .i2c_address = 0x38}
 
 #ifdef __cplusplus
@@ -28,6 +29,7 @@ extern "C"
     {
         i2c_master_bus_handle_t i2c_handle; /*!< Unique I2C bus handle. */
         uint8_t i2c_address;                /*!< Sensor I2C address. */
+        uint32_t i2c_frequency;             /*!< Sensor I2C frequency. */
     } zh_aht_init_config_t;
 
     /**

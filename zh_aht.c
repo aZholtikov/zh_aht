@@ -63,6 +63,7 @@ esp_err_t zh_aht_reset(zh_aht_handle_t *handle)
 static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config)
 {
     ZH_ERROR_CHECK(config->i2c_address == 0x38 || config->i2c_address == 0x39, ESP_ERR_INVALID_ARG, NULL, "Invalid I2C address.");
+    ZH_ERROR_CHECK(config->i2c_frequency <= 400000, ESP_ERR_INVALID_ARG, NULL, "Invalid I2C frequency.");
     ZH_ERROR_CHECK(config->i2c_handle != NULL, ESP_ERR_INVALID_ARG, NULL, "Invalid I2C handle.");
     return ESP_OK;
 }
@@ -72,7 +73,7 @@ static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_han
     i2c_device_config_t aht_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = config->i2c_address,
-        .scl_speed_hz = 100000,
+        .scl_speed_hz = config->i2c_frequency,
     };
     i2c_master_dev_handle_t _dev_handle = NULL;
     ZH_ERROR_CHECK(i2c_master_bus_add_device(config->i2c_handle, &aht_config, &_dev_handle) == ESP_OK, ESP_FAIL, NULL, "Add I2C device failed.");
