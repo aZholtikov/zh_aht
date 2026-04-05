@@ -33,7 +33,7 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handl
     return ESP_OK;
 }
 
-esp_err_t zh_aht_read(zh_aht_handle_t *handle, float *humidity, float *temperature)
+esp_err_t zh_aht_read(zh_aht_handle_t *handle, float *humidity, float *temperature) // -V2008
 {
     ZH_LOGI("AHT read begin.");
     ZH_ERROR_CHECK(humidity != NULL && temperature != NULL && handle != NULL, ESP_ERR_INVALID_ARG, NULL, "AHT read fail. Invalid argument.");
@@ -84,7 +84,7 @@ static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config)
     return ESP_OK;
 }
 
-static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle)
+static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle) // -V2008
 {
     i2c_device_config_t aht_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
