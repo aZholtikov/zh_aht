@@ -14,7 +14,7 @@
  */
 #define ZH_AHT_INIT_CONFIG_DEFAULT() \
     {                                \
-    }
+        .i2c_address = 0x38}
 
 #ifdef __cplusplus
 extern "C"
@@ -27,12 +27,23 @@ extern "C"
     typedef struct
     {
         i2c_master_bus_handle_t i2c_handle; /*!< Unique I2C bus handle. */
+        uint8_t i2c_address;                /*!< Sensor I2C address. */
     } zh_aht_init_config_t;
+
+    /**
+     * @brief AHT sensor handle.
+     */
+    typedef struct
+    {
+        bool is_initialized;                /*!< Sensor initialization flag. */
+        i2c_master_dev_handle_t dev_handle; /*!< Unique I2C device handle. */
+    } zh_aht_handle_t;
 
     /**
      * @brief Initialize AHT sensor.
      *
      * @param[in] config Pointer to AHT initialized configuration structure. Can point to a temporary variable.
+     * @param[out] handle Pointer to unique AHT handle.
      *
      * @attention I2C driver must be initialized first.
      *
@@ -42,24 +53,27 @@ extern "C"
      *
      * @return ESP_OK if success or an error code otherwise.
      */
-    esp_err_t zh_aht_init(const zh_aht_init_config_t *config);
+    esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle);
 
     /**
      * @brief Read AHT sensor.
      *
+     * @param[in] handle Pointer to unique AHT handle.
      * @param[out] humidity Pointer for AHT sensor reading data of humidity.
      * @param[out] temperature Pointer for AHT sensor reading data of temperature.
      *
      * @return ESP_OK if success or an error code otherwise.
      */
-    esp_err_t zh_aht_read(float *humidity, float *temperature);
+    esp_err_t zh_aht_read(zh_aht_handle_t *handle, float *humidity, float *temperature);
 
     /**
      * @brief Reset AHT sensor.
      *
+     * @param[in] handle Pointer to unique AHT handle.
+     *
      * @return ESP_OK if success or an error code otherwise.
      */
-    esp_err_t zh_aht_reset(void);
+    esp_err_t zh_aht_reset(zh_aht_handle_t *handle);
 
 #ifdef __cplusplus
 }
