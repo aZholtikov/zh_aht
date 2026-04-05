@@ -66,6 +66,8 @@ void app_main(void)
         zh_aht_read(&aht_handle, &humidity, &temperature);
         printf("Humidity %0.2f\n", humidity);
         printf("Temperature %0.2f\n", temperature);
+        const zh_aht_stats_t *stats = zh_aht_get_stats();
+        printf("Number of i2c driver error: %ld.\n", stats->i2c_driver_error);
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }

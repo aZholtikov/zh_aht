@@ -42,6 +42,14 @@ extern "C"
     } zh_aht_handle_t;
 
     /**
+     * @brief Structure for error statistics storage.
+     */
+    typedef struct
+    {
+        uint32_t i2c_driver_error; /*!< Number of i2c driver error. */
+    } zh_aht_stats_t;
+
+    /**
      * @brief Initialize AHT sensor.
      *
      * @param[in] config Pointer to AHT initialized configuration structure. Can point to a temporary variable.
@@ -76,6 +84,18 @@ extern "C"
      * @return ESP_OK if success or an error code otherwise.
      */
     esp_err_t zh_aht_reset(zh_aht_handle_t *handle);
+
+    /**
+     * @brief Get error statistics.
+     *
+     * @return Pointer to the statistics structure.
+     */
+    const zh_aht_stats_t *zh_aht_get_stats(void);
+
+    /**
+     * @brief Reset error statistics.
+     */
+    void zh_aht_reset_stats(void);
 
 #ifdef __cplusplus
 }

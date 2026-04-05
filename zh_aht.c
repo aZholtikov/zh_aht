@@ -16,6 +16,7 @@ static const char *TAG = "zh_aht";
 static const uint8_t _aht_reset_command = 0xBA;
 static const uint8_t _aht_read_command[] = {0xAC, 0x33, 0x00};
 static const uint8_t _aht_init_command[] = {0xBE, 0x08, 0x00};
+static zh_aht_stats_t _stats = {0};
 
 static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config);
 static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle);
@@ -38,9 +39,11 @@ esp_err_t zh_aht_read(zh_aht_handle_t *handle, float *humidity, float *temperatu
     ZH_ERROR_CHECK(humidity != NULL && temperature != NULL && handle != NULL, ESP_ERR_INVALID_ARG, NULL, "AHT read fail. Invalid argument.");
     ZH_ERROR_CHECK(handle->is_initialized == true, ESP_ERR_NOT_FOUND, NULL, "AHT read fail. AHT not initialized.");
     uint8_t sensor_data[7] = {0};
-    ZH_ERROR_CHECK(i2c_master_transmit(handle->dev_handle, _aht_read_command, sizeof(_aht_read_command), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL, NULL, "AHT read fail. I2C driver error.");
+    ZH_ERROR_CHECK(i2c_master_transmit(handle->dev_handle, _aht_read_command, sizeof(_aht_read_command), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL,
+                   ++_stats.i2c_driver_error, "AHT read fail. I2C driver error.");
     vTaskDelay(80 / portTICK_PERIOD_MS);
-    ZH_ERROR_CHECK(i2c_master_receive(handle->dev_handle, sensor_data, sizeof(sensor_data), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL, NULL, "AHT read fail. I2C driver error.");
+    ZH_ERROR_CHECK(i2c_master_receive(handle->dev_handle, sensor_data, sizeof(sensor_data), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL,
+                   ++_stats.i2c_driver_error, "AHT read fail. I2C driver error.");
     ZH_ERROR_CHECK((sensor_data[0] & 0x80) == 0, ESP_ERR_TIMEOUT, NULL, "AHT read fail. Timeout exceeded.");
     ZH_ERROR_CHECK(_zh_aht_calc_crc(sensor_data, 6) == sensor_data[6], ESP_ERR_INVALID_CRC, NULL, "AHT read fail. Invalid CRC.");
     *humidity = (((((uint32_t)sensor_data[1]) << 16) | (((uint32_t)sensor_data[2]) << 8) | (((uint32_t)sensor_data[3]) << 0)) >> 4) / 1048576.0 * 100.0;
@@ -54,10 +57,23 @@ esp_err_t zh_aht_reset(zh_aht_handle_t *handle)
     ZH_LOGI("AHT reset begin.");
     ZH_ERROR_CHECK(handle != NULL, ESP_ERR_INVALID_ARG, NULL, "AHT reset fail. Invalid argument.");
     ZH_ERROR_CHECK(handle->is_initialized == true, ESP_ERR_NOT_FOUND, NULL, "AHT reset fail. AHT not initialized.");
-    ZH_ERROR_CHECK(i2c_master_transmit(handle->dev_handle, &_aht_reset_command, sizeof(_aht_reset_command), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL, NULL, "AHT reset fail. I2C driver error.");
+    ZH_ERROR_CHECK(i2c_master_transmit(handle->dev_handle, &_aht_reset_command, sizeof(_aht_reset_command), 1000 / portTICK_PERIOD_MS) == ESP_OK, ESP_FAIL,
+                   ++_stats.i2c_driver_error, "AHT reset fail. I2C driver error.");
     vTaskDelay(20 / portTICK_PERIOD_MS);
     ZH_LOGI("AHT reset completed successfully.");
     return ESP_OK;
+}
+
+const zh_aht_stats_t *zh_aht_get_stats(void)
+{
+    return &_stats;
+}
+
+void zh_aht_reset_stats(void)
+{
+    ZH_LOGI("Error statistic reset started.");
+    _stats.i2c_driver_error = 0;
+    ZH_LOGI("Error statistic reset successfully.");
 }
 
 static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config)
