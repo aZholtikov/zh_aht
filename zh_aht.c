@@ -33,6 +33,17 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handl
     return ESP_OK;
 }
 
+esp_err_t zh_aht_deinit(zh_aht_handle_t *handle)
+{
+    ZH_LOGI("AHT deinitialization started.");
+    ZH_ERROR_CHECK(handle != NULL, ESP_ERR_INVALID_ARG, NULL, "AHT deinitialization failed. Invalid argument.");
+    ZH_ERROR_CHECK(handle->is_initialized == true, ESP_ERR_INVALID_STATE, NULL, "AHT deinitialization failed. AHT not initialized.");
+    ZH_ERROR_CHECK(i2c_master_bus_rm_device(handle->dev_handle) == ESP_OK, ESP_FAIL, NULL, "AHT deinitialization failed. I2C remove device failed.");
+    handle->is_initialized = false;
+    ZH_LOGI("AHT deinitialization completed successfully.");
+    return ESP_OK;
+}
+
 esp_err_t zh_aht_read(zh_aht_handle_t *handle, float *humidity, float *temperature) // -V2008
 {
     ZH_LOGI("AHT read begin.");

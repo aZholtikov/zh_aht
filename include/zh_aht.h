@@ -66,6 +66,15 @@ extern "C"
     esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle);
 
     /**
+     * @brief Deinitialize AHT sensor.
+     *
+     * @param[in] handle Pointer to unique AHT handle.
+     *
+     * @return ESP_OK if success or an error code otherwise.
+     */
+    esp_err_t zh_aht_deinit(zh_aht_handle_t *handle);
+
+    /**
      * @brief Read AHT sensor.
      *
      * @param[in] handle Pointer to unique AHT handle.
