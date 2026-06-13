@@ -242,7 +242,6 @@ zh_aht_handle_t aht_handle = {0};
 void app_main(void)
 {
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    
     i2c_master_bus_config_t i2c_bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
@@ -251,15 +250,11 @@ void app_main(void)
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
     i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
-    
     zh_aht_init_config_t config = ZH_AHT_INIT_CONFIG_DEFAULT();
     config.i2c_handle = i2c_bus_handle;
-    
     zh_aht_init(&config, &aht_handle);
-    
     float humidity = 0.0;
     float temperature = 0.0;
     for (;;)
@@ -267,10 +262,8 @@ void app_main(void)
         zh_aht_read(&aht_handle, &humidity, &temperature);
         printf("Влажность: %.2f%%\n", humidity);
         printf("Температура: %.2f°C\n", temperature);
-        
         const zh_aht_stats_t *stats = zh_aht_get_stats();
         printf("Ошибки I2C: %ld\n", stats->i2c_driver_error);
-        
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
@@ -295,7 +288,6 @@ void app_main(void)
 {
     esp_log_level_set("zh_pca9548a", ESP_LOG_ERROR);
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    
     i2c_master_bus_config_t i2c_bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
@@ -304,29 +296,22 @@ void app_main(void)
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
     i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
-    
     // Инициализация I2C мультиплексатора
     zh_pca9548a_init_config_t pca_config = ZH_PCA9548A_INIT_CONFIG_DEFAULT();
     pca_config.i2c_handle = i2c_bus_handle;
     pca_config.i2c_address = 0x70;
     zh_pca9548a_init(&pca_config, &pca9548a_handle);
-    
     // Инициализация датчиков AHT на разных каналах
     zh_aht_init_config_t aht_config = ZH_AHT_INIT_CONFIG_DEFAULT();
     aht_config.i2c_handle = i2c_bus_handle;
-    
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_0);
     zh_aht_init(&aht_config, &aht_handle_chan_0);
-    
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
     zh_aht_init(&aht_config, &aht_handle_chan_1);
-    
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
     zh_aht_init(&aht_config, &aht_handle_chan_2);
-    
     float humidity = 0.0;
     float temperature = 0.0;
     for (;;)
@@ -336,19 +321,16 @@ void app_main(void)
         zh_aht_read(&aht_handle_chan_0, &humidity, &temperature);
         printf("Датчик 1. Влажность: %.2f%%\n", humidity);
         printf("Датчик 1. Температура: %.2f°C\n", temperature);
-        
         // Считывание с датчика на канале 1
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
         zh_aht_read(&aht_handle_chan_1, &humidity, &temperature);
         printf("Датчик 2. Влажность: %.2f%%\n", humidity);
         printf("Датчик 2. Температура: %.2f°C\n", temperature);
-        
         // Считывание с датчика на канале 2
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
         zh_aht_read(&aht_handle_chan_2, &humidity, &temperature);
         printf("Датчик 3. Влажность: %.2f%%\n", humidity);
         printf("Датчик 3. Температура: %.2f°C\n", temperature);
-        
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
