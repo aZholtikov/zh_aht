@@ -1,6 +1,6 @@
 description: ESP32 ESP-IDF component for AHT10/AHT15/AHT20/AHT21/AHT25/AHT30 humidity & temperature sensor
 url: https://github.com/aZholtikov/zh_aht
-version: "3.4.0"
+version: "4.0.0"
 license: "Apache-2.0"
 maintainers:
   - "Alexey Zholtikov <alexey.zholtikov@yandex.ru>"

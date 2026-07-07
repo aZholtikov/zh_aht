@@ -16,7 +16,7 @@
 
 ## Overview
 
-`zh_aht` is a lightweight ESP-IDF component for AHT10/AHT15/AHT20/AHT21/AHT25/AHT30 humidity and temperature sensors. It provides a simple API to read humidity values from 0 to 100% and temperature values from -40 to +85°C. The component supports multiple sensors on a single I2C bus using the [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a) I2C multiplexer.
+`zh_aht` is a lightweight ESP-IDF component for AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40 humidity and temperature sensors. It provides a simple API to read humidity values from 0 to 100% and temperature values from -40 to +85°C. The component supports multiple sensors on a single I2C bus using the [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a) I2C multiplexer.
 
 The component is designed specifically for ESP32 microcontrollers and uses ESP-IDF v5.0+ I2C driver API.
 
@@ -26,8 +26,8 @@ The component is designed specifically for ESP32 microcontrollers and uses ESP-I
 
 1. **Humidity and Temperature Measurement**: Reads humidity from 0 to 100% and temperature from -40 to +85°C
 2. **I2C Interface**: Uses standard I2C protocol (400 kHz max frequency)
-3. **Configurable I2C Address**: Supports both 0x38 and 0x39 addresses
-4. **Multiple Model Support**: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30
+3. **Configurable I2C Address**: Supports 0x38, 0x39 and 0x44 addresses
+4. **Multiple Model Support**: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40
 5. **Error Statistics**: Built-in error counter for I2C driver errors
 6. **Low Power**: Works with ESP-IDF power management
 7. **Thread-Safe**: Uses ESP-IDF I2C driver (thread-safe)
@@ -75,13 +75,15 @@ To use multiple AHT sensors on the same I2C bus, also install the [zh_pca9548a](
 
 ## API Reference
 
+All functions in this library use double pointer (`zh_aht_handle_t **`) for the sensor handler to allow for proper memory management and thread-safe operations.
+
 ### zh_aht_init_config_t Structure
 
 ```c
 typedef struct
 {
     i2c_master_bus_handle_t i2c_handle; // Unique I2C bus handle
-    uint8_t i2c_address;                // Sensor I2C address (0x38 or 0x39)
+    uint8_t i2c_address;                // Sensor I2C address (0x38, 0x39, or 0x44)
     uint32_t i2c_frequency;             // Sensor I2C frequency (max 400000 Hz)
 } zh_aht_init_config_t;
 ```
@@ -95,13 +97,13 @@ Use `ZH_AHT_INIT_CONFIG_DEFAULT()` macro to initialize with default values:
 
 ### zh_aht_handle_t Structure
 
-```c
-typedef struct
-{
-    bool is_initialized;                // Sensor initialization flag
-    i2c_master_dev_handle_t dev_handle; // Unique I2C device handle
-} zh_aht_handle_t;
-```
+The structure is declared as `typedef struct _zh_aht_handle_t zh_aht_handle_t;` and encapsulates internal implementation details.
+
+**Fields (internal):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `i2c_master_dev_handle_t` | `dev_handle` | Pointer to I2C device handle. |
 
 ---
 
@@ -123,18 +125,21 @@ Initializes the AHT sensor.
 **Parameters:**
 
 - `config` - Pointer to AHT initialization configuration structure
-- `handle` - Pointer to unique AHT handle
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). If the pointer is NULL, memory will be allocated.
 
 **Returns:**
 
 - `ESP_OK` - Success
 - `ESP_ERR_INVALID_ARG` - Invalid argument (NULL config or handle)
-- `ESP_FAIL` - Initialization failed (configuration check or I2C device addition)
+- `ESP_ERR_INVALID_STATE` - Sensor is already initialized
+- `ESP_ERR_NO_MEM` - Memory allocation failed
+- `ESP_FAIL` - Initialization I2C device failed
+- `ESP_ERR_NOT_FOUND` - Sensor did not respond
 
 **Example:**
 
 ```c
-zh_aht_handle_t aht_handle = {0};
+zh_aht_handle_t *aht_handle = NULL;
 zh_aht_init_config_t config = ZH_AHT_INIT_CONFIG_DEFAULT();
 config.i2c_handle = i2c_bus_handle;
 zh_aht_init(&config, &aht_handle);
@@ -144,17 +149,16 @@ zh_aht_init(&config, &aht_handle);
 
 ### zh_aht_deinit()
 
-Deinitializes the AHT sensor and removes it from the I2C bus.
+Deinitializes the AHT sensor and removes it from the I2C bus. Memory for handle is automatically freed and the pointer is set to NULL.
 
 **Parameters:**
 
-- `handle` - Pointer to unique AHT handle
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
 
 **Returns:**
 
 - `ESP_OK` - Success
-- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle)
-- `ESP_ERR_INVALID_STATE` - Sensor not initialized
+- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle pointer)
 - `ESP_FAIL` - I2C device removal failed
 
 ---
@@ -165,18 +169,17 @@ Reads humidity and temperature values from the sensor.
 
 **Parameters:**
 
-- `handle` - Pointer to unique AHT handle
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
 - `humidity` - Pointer to store humidity value (in %)
 - `temperature` - Pointer to store temperature value (in °C)
 
 **Returns:**
 
 - `ESP_OK` - Success
-- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle, humidity or temperature)
-- `ESP_ERR_NOT_FOUND` - Sensor not initialized
+- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle pointer or humidity pointer or temperature pointer)
+- `ESP_FAIL` - I2C communication error
 - `ESP_ERR_TIMEOUT` - Timeout waiting for data ready
 - `ESP_ERR_INVALID_CRC` - Invalid CRC checksum
-- `ESP_FAIL` - I2C communication error
 
 **Note:** The function performs measurement and waits ~80ms for data ready.
 
@@ -188,13 +191,12 @@ Resets the AHT sensor.
 
 **Parameters:**
 
-- `handle` - Pointer to unique AHT handle
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
 
 **Returns:**
 
 - `ESP_OK` - Success
-- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle)
-- `ESP_ERR_NOT_FOUND` - Sensor not initialized
+- `ESP_ERR_INVALID_ARG` - Invalid argument (NULL handle pointer)
 - `ESP_FAIL` - I2C communication error
 
 ---
@@ -207,24 +209,11 @@ Gets error statistics since last reset.
 
 - Pointer to the statistics structure
 
-**Example:**
-
-```c
-const zh_aht_stats_t *stats = zh_aht_get_stats();
-printf("I2C errors: %ld\n", stats->i2c_driver_error);
-```
-
 ---
 
 ### zh_aht_reset_stats()
 
 Resets error statistics counter.
-
-**Example:**
-
-```c
-zh_aht_reset_stats();
-```
 
 ---
 
@@ -237,7 +226,7 @@ zh_aht_reset_stats();
 
 #define I2C_PORT (I2C_NUM_MAX - 1)
 
-zh_aht_handle_t aht_handle = {0};
+zh_aht_handle_t *aht_handle = NULL;
 
 void app_main(void)
 {
@@ -280,9 +269,9 @@ void app_main(void)
 #define I2C_PORT (I2C_NUM_MAX - 1)
 
 zh_pca9548a_handle_t pca9548a_handle = {0};
-zh_aht_handle_t aht_handle_chan_0 = {0};
-zh_aht_handle_t aht_handle_chan_1 = {0};
-zh_aht_handle_t aht_handle_chan_2 = {0};
+zh_aht_handle_t *aht_handle_chan_0 = NULL;
+zh_aht_handle_t *aht_handle_chan_1 = NULL;
+zh_aht_handle_t *aht_handle_chan_2 = NULL;
 
 void app_main(void)
 {
@@ -346,10 +335,10 @@ void app_main(void)
 | **Temperature Range** | -40 - +85°C |
 | **Humidity Resolution** | 0.01% |
 | **Temperature Resolution** | 0.01°C |
-| **I2C Address** | 0x38, 0x39 |
+| **I2C Address** | 0x38, 0x39, 0x44 |
 | **I2C Frequency** | Up to 400 kHz |
 | **Measurement Time** | ~80 ms |
-| **Supported Models** | AHT10, AHT15, AHT20, AHT21, AHT25, AHT30 |
+| **Supported Models** | AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40 |
 | **ESP-IDF Version** | >= 5.0 |
 | **Platform** | ESP32 series |
 | **Language** | C (C99) |
@@ -362,8 +351,9 @@ void app_main(void)
 |------------|-------------|
 | `ESP_OK` | Operation successful |
 | `ESP_ERR_INVALID_ARG` | Invalid argument (NULL pointer or invalid configuration) |
-| `ESP_ERR_INVALID_STATE` | Sensor not initialized |
-| `ESP_ERR_NOT_FOUND` | Sensor not initialized or not responding |
+| `ESP_ERR_INVALID_STATE` | Sensor is already initialized |
+| `ESP_ERR_NO_MEM` | Memory allocation failed |
+| `ESP_ERR_NOT_FOUND` | Sensor did not respond |
 | `ESP_ERR_TIMEOUT` | Timeout waiting for data ready |
 | `ESP_ERR_INVALID_CRC` | Invalid CRC checksum |
 | `ESP_FAIL` | General failure (I2C communication error) |
@@ -412,7 +402,8 @@ limitations under the License.
 - **Measurement Time**: The sensor requires ~80ms for each measurement
 - **I2C_ISR_IRAM_SAFE**: For correct operation, enable `I2C_ISR_IRAM_SAFE` and `I2C_MASTER_ISR_HANDLER_IN_IRAM` in menuconfig
 - **Thread Safety**: The component uses ESP-IDF I2C driver which is thread-safe
+- **Memory Management**: All API functions now use double pointers for handle, which allows automatic memory management (freeing on deinitialization, setting to NULL)
 
 ---
 
-*Generated for zh_aht v3.4.0*
+*Generated for zh_aht v4.0.0*
