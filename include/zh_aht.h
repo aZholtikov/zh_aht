@@ -7,7 +7,7 @@
  * All devices (AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40) share the same command set, data format, and CRC algorithm.
  *
  * @note Supported devices: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40, and compatible clones.
- * @note Default I2C address: 0x38 (ADR tied to GND). Some variants (e.g., AHT20/30/40 on certain boards) may use 0x39 (ADR tied to VDD).
+ * @note Default I2C address: 0x38 (ADR tied to GND). Some variants (e.g., AHT20/30 on certain boards) may use 0x39 (ADR tied to VDD). For AHT40 use 0x44.
  * @note Measurement range and accuracy differ between variants, but communication protocol is identical.
  */
 
