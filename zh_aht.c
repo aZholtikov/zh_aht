@@ -13,6 +13,14 @@ static const char *TAG = "zh_aht";
         return err;                                  \
     }
 
+#define ZH_ERROR_CHECK_VOID(cond, cleanup, msg, ...) \
+    if (!(cond))                                     \
+    {                                                \
+        ZH_LOGE(msg, ESP_FAIL, ##__VA_ARGS__);       \
+        cleanup;                                     \
+        return;                                      \
+    }
+
 /**
  * @brief Opaque handle structure for the AHT family sensor (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40).
  *
