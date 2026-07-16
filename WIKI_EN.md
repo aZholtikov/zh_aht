@@ -38,25 +38,25 @@ The component is designed specifically for ESP32 microcontrollers and uses ESP-I
 
 ## Installation
 
-1. Navigate to your project's components directory:
+Navigate to your project's components directory:
 
 ```bash
 cd ../your_project/components
 ```
 
-2. Clone the repository:
+Clone the repository:
 
 ```bash
 git clone https://github.com/aZholtikov/zh_aht.git
 ```
 
-3. In your application, include the header:
+In your application, include the header:
 
 ```c
 #include "zh_aht.h"
 ```
 
-4. The component will be automatically built with your project.
+The component will be automatically built with your project.
 
 ### Required menuconfig Settings
 
