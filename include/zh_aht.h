@@ -18,11 +18,6 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 /**
  * @brief Default AHT initialization configuration.
  *
@@ -35,6 +30,11 @@ extern "C"
     {                                \
         .i2c_frequency = 400000,     \
         .i2c_address = 0x38}
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
     /**
      * @brief Opaque handle type for AHT family sensor instance.
