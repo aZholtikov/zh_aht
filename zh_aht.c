@@ -13,14 +13,6 @@ static const char *TAG = "zh_aht";
         return err;                                  \
     }
 
-#define ZH_ERROR_CHECK_VOID(cond, cleanup, msg, ...) \
-    if (!(cond))                                     \
-    {                                                \
-        ZH_LOGE(msg, ESP_FAIL, ##__VA_ARGS__);       \
-        cleanup;                                     \
-        return;                                      \
-    }
-
 /**
  * @brief Opaque handle structure for the AHT family sensor (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40).
  *
@@ -54,7 +46,7 @@ static const uint8_t _aht_init_command[] = {0xBE, 0x08, 0x00}; /*!< Self-calibra
 static zh_aht_stats_t _stats = {0};
 
 static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config);
-static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle);
+static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle);
 static uint8_t _zh_aht_calc_crc(const uint8_t *buf, size_t len);
 
 esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle) // -V2008
@@ -65,7 +57,7 @@ esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t **hand
     ZH_ERROR_CHECK(*handle == NULL, ESP_ERR_INVALID_STATE, NULL, "AHT initialization failed. AHT is already initialized.");
     *handle = heap_caps_calloc(1, sizeof(zh_aht_handle_t), MALLOC_CAP_8BIT);
     ZH_ERROR_CHECK(*handle != NULL, ESP_ERR_NO_MEM, NULL, "AHT initialization failed. Failed to allocate AHT handle.");
-    ZH_ERROR_CHECK(_zh_aht_i2c_init(config, handle) == ESP_OK, ESP_FAIL, heap_caps_free(*handle); *handle = NULL, "AHT initialization failed. I2C init failed.");
+    ZH_ERROR_CHECK(_zh_aht_i2c_init(config, *handle) == ESP_OK, ESP_FAIL, heap_caps_free(*handle); *handle = NULL, "AHT initialization failed. I2C init failed.");
     ZH_LOGI("AHT initialization completed successfully.");
     return ESP_OK;
 }
@@ -130,7 +122,7 @@ static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config)
     return ESP_OK;
 }
 
-static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle) // -V2008
+static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle) // -V2008
 {
     i2c_device_config_t aht_config = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
@@ -151,7 +143,7 @@ static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_han
                        {ZH_ERROR_CHECK(i2c_master_bus_rm_device(_dev_handle) == ESP_OK, ESP_FAIL, NULL, "I2C remove device failed.")}, "I2C driver error.");
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }
-    (*handle)->dev_handle = _dev_handle;
+    handle->dev_handle = _dev_handle;
     return ESP_OK;
 }
 
