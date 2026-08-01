@@ -1,4 +1,4 @@
-# ESP32 ESP-IDF component for AHT family humidity & temperature sensor
+# ESP32 ESP-IDF zh_aht - Humidity & Temperature Sensor Component
 
 ## Wiki
 
@@ -14,17 +14,10 @@
 
 ## Features
 
-1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40.
-2. Support some sensors on one device with [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a).
-
-## Attention
-
-For correct operation, please enable the following settings in the menuconfig:
-
-```text
-I2C_ISR_IRAM_SAFE
-I2C_MASTER_ISR_HANDLER_IN_IRAM
-```
+1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40
+2. Support multiple sensors on one device with [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a)
+3. CRC8 data integrity verification
+4. Error statistics tracking
 
 ## Using
 

@@ -14,39 +14,56 @@ static const char *TAG = "zh_aht";
     }
 
 /**
- * @brief Opaque handle structure for the AHT family sensor (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40).
+ * @brief Handle structure for AHT sensor.
  *
- * This structure encapsulates the I2C device handle required to communicate with any sensor
- * in the AHT family. All AHT sensors share the same I2C protocol, register map, and CRC algorithm.
- *
- * @note Supported devices: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40, and compatible clones.
- * @note Default I2C addresses:
- *       - AHT10: 0x38 (ADR tied to GND)
- *       - AHT20/30: 0x38 (ADR tied to GND), 0x39 (ADR tied to VDD)
- *       - AHT40: 0x44
- * @note Some variants may differ in measurement range and accuracy, but not in communication protocol.
- *
- * @note Do not instantiate or modify this structure directly. All interactions must go through
- *       the public API functions: zh_aht_init(), zh_aht_read(), zh_aht_deinit(), etc.
+ * Internal structure managing the I2C device connection.
  */
 struct _zh_aht_handle_t
 {
-    i2c_master_dev_handle_t dev_handle; /*!< I2C device handle (ESP-IDF i2c_master API) used for all bus transactions. */
+    i2c_master_dev_handle_t dev_handle; /*!< I2C device handle for sensor communication */
 };
 
-/**
- * @brief AHT family command constants.
- *
- * @note All AHT family members (AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40) support these commands.
- * @note CRC algorithm, data format, and command structure are identical across family.
- */
-static const uint8_t _aht_reset_command = 0xBA;                /*!< Soft reset command (AHT family common). */
-static const uint8_t _aht_read_command[] = {0xAC, 0x33, 0x00}; /*!< Trigger measurement and read data command. Format: 0xAC (measurement trigger) + 0x33 (normal mode) + 0x00 (unused byte). */
-static const uint8_t _aht_init_command[] = {0xBE, 0x08, 0x00}; /*!< Self-calibration/initialization command (must be sent if CALIBRATED bit (status[3]) = 0). */
-static zh_aht_stats_t _stats = {0};
+static const uint8_t _aht_reset_command = 0xBA;                /*!< Reset command for AHT sensor */
+static const uint8_t _aht_read_command[] = {0xAC, 0x33, 0x00}; /*!< Command sequence to initiate sensor data read */
+static const uint8_t _aht_init_command[] = {0xBE, 0x08, 0x00}; /*!< Command sequence to configure sensor for normal operation */
+static zh_aht_stats_t _stats = {0};                            /*!< Global statistics structure for error tracking */
 
+/**
+ * @brief Validate initialization configuration.
+ *
+ * Checks I2C address, frequency, and handle validity.
+ *
+ * @param config Pointer to initialization configuration
+ *
+ * @return ESP_OK on success
+ * @return ESP_ERR_INVALID_ARG if any configuration parameter is invalid
+ */
 static esp_err_t _zh_aht_validate_config(const zh_aht_init_config_t *config);
+
+/**
+ * @brief Initialize I2C communication with AHT sensor.
+ *
+ * Configures I2C device, probes sensor, and performs initialization command if needed.
+ *
+ * @param config Pointer to initialization configuration
+ * @param handle Pointer to handle structure to store device handle
+ *
+ * @return ESP_OK on success
+ * @return ESP_FAIL on I2C communication errors
+ * @return ESP_ERR_NOT_FOUND if sensor is not detected
+ */
 static esp_err_t _zh_aht_i2c_init(const zh_aht_init_config_t *config, zh_aht_handle_t *handle);
+
+/**
+ * @brief Calculate CRC8 for data validation.
+ *
+ * Implements CRC8 algorithm using polynomial 0x31 for sensor data integrity check.
+ *
+ * @param buf Pointer to data buffer
+ * @param len Length of data buffer
+ *
+ * @return Calculated CRC8 value
+ */
 static uint8_t _zh_aht_calc_crc(const uint8_t *buf, size_t len);
 
 esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle) // -V2008

@@ -24,7 +24,7 @@ The component is designed specifically for ESP32 microcontrollers and uses ESP-I
 
 ## Features
 
-1. **Humidity and Temperature Measurement**: Reads humidity from 0 to 100% and temperature from -40 to +85°C
+1. **Humidity and Temperature Measurement**: Reads humidity from 0 to 100% and temperature from -50 to +150°C
 2. **I2C Interface**: Uses standard I2C protocol (400 kHz max frequency)
 3. **Configurable I2C Address**: Supports 0x38, 0x39 and 0x44 addresses
 4. **Multiple Model Support**: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40
@@ -330,9 +330,9 @@ void app_main(void)
 ## Technical Specifications
 
 | Parameter | Value |
-|-----------|-------|
+| ----------- | ------- |
 | **Humidity Range** | 0 - 100% |
-| **Temperature Range** | -40 - +85°C |
+| **Temperature Range** | -50 - +150°C |
 | **Humidity Resolution** | 0.01% |
 | **Temperature Resolution** | 0.01°C |
 | **I2C Address** | 0x38, 0x39, 0x44 |
@@ -348,7 +348,7 @@ void app_main(void)
 ## Error Codes
 
 | Error Code | Description |
-|------------|-------------|
+| ------------ | ------------- |
 | `ESP_OK` | Operation successful |
 | `ESP_ERR_INVALID_ARG` | Invalid argument (NULL pointer or invalid configuration) |
 | `ESP_ERR_INVALID_STATE` | Sensor is already initialized |

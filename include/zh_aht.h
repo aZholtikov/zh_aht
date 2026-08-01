@@ -1,14 +1,19 @@
 /**
  * @file zh_aht.h
  *
- * @brief ESP-IDF driver for AHT family sensors (AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40).
+ * @brief Driver for AHT series temperature and humidity sensors (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40)
  *
- * This module provides a high-level interface to control AHT family I2C temperature & humidity sensors.
- * All devices (AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40) share the same command set, data format, and CRC algorithm.
+ * Provides I2C-based communication with AHT sensors including initialization,
+ * data reading with CRC validation, reset functionality, and error statistics.
  *
- * @note Supported devices: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40, and compatible clones.
- * @note Default I2C address: 0x38 (ADR tied to GND). Some variants (e.g., AHT20/30 on certain boards) may use 0x39 (ADR tied to VDD). For AHT40 use 0x44.
- * @note Measurement range and accuracy differ between variants, but communication protocol is identical.
+ * Key features:
+ * - I2C interface with configurable address and frequency
+ * - Automatic sensor initialization and probe detection
+ * - CRC8 data integrity verification
+ * - Error statistics tracking
+ *
+ * @note Requires ESP-IDF v5.0+ with I2C master driver
+ * @note Enable I2C_ISR_IRAM_SAFE and I2C_MASTER_ISR_HANDLER_IN_IRAM in menuconfig
  */
 
 #pragma once
@@ -18,14 +23,6 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 
-/**
- * @brief Default AHT initialization configuration.
- *
- * @note I2C frequency: 400 kHz (fast mode — supported by all AHT variants).
- * @note I2C address: 0x38 (ADR = GND). If ADR is pulled high (VDD), use 0x39. For AHT40 use 0x44.
- *
- * @warning AHT20/30 may be configured to 0x39 by hardware — check your board!
- */
 #define ZH_AHT_INIT_CONFIG_DEFAULT() \
     {                                \
         .i2c_frequency = 400000,     \
@@ -36,100 +33,99 @@ extern "C"
 {
 #endif
 
-    /**
-     * @brief Opaque handle type for AHT family sensor instance.
-     */
     typedef struct _zh_aht_handle_t zh_aht_handle_t;
 
     /**
-     * @brief AHT sensor initialization configuration structure.
+     * @brief Configuration structure for AHT sensor initialization
      */
     typedef struct
     {
-        i2c_master_bus_handle_t i2c_handle; /*!< I2C bus handle (created via i2c_master_bus_create() or i2c_master_bus_alloc_handle()). */
-        uint8_t i2c_address;                /*!< I2C address: 0x38 (ADR=GND) or 0x39 (ADR=VDD) or 0x44 (AHT40). */
-        uint32_t i2c_frequency;             /*!< I2C clock frequency in Hz (≤ 400000). */
+        i2c_master_bus_handle_t i2c_handle; /*!< I2C bus handle for sensor connection */
+        uint8_t i2c_address;                /*!< I2C device address (0x38, 0x39, or 0x44) */
+        uint32_t i2c_frequency;             /*!< I2C clock frequency (up to 400000 Hz) */
     } zh_aht_init_config_t;
 
     /**
-     * @brief Error statistics structure.
+     * @brief Structure containing sensor error statistics
      */
     typedef struct
     {
-        uint32_t i2c_driver_error; /*!< Number of I2C errors in zh_aht_read()/zh_aht_reset(). */
+        uint32_t i2c_driver_error; /*!< Counter of I2C driver errors */
     } zh_aht_stats_t;
 
     /**
-     * @brief Initialize an AHT family sensor and allocate handle.
+     * @brief Initialize AHT sensor and establish I2C communication
      *
-     * Validates configuration, allocates handle, registers device, probes sensor, and triggers calibration if needed.
+     * Allocates handle, configures I2C device, probes sensor presence,
+     * and sends initialization command if required.
      *
-     * @param[in] config Pointer to initialized configuration (must be non `NULL`, valid).
-     * @param[out] handle Double pointer to handle structure (`zh_aht_handle_t **`). On success, `*handle` points to newly allocated structure.
+     * @param[in] config Pointer to initialization configuration (must not be NULL)
+     * @param[out] handle Pointer to receive the created sensor handle (must be NULL)
      *
-     * @return ESP_OK on success.
-     * @return ESP_ERR_INVALID_ARG if `config == NULL` or `handle == NULL`.
-     * @return ESP_ERR_INVALID_STATE if `*handle != NULL` (already initialized).
-     * @return ESP_ERR_NO_MEM if handle allocation failed.
-     * @return ESP_FAIL if I2C registration failed.
-     * @return ESP_ERR_NOT_FOUND if sensor did not respond.
+     * @return ESP_OK on success
+     * @return ESP_ERR_INVALID_ARG if configuration parameters are invalid
+     * @return ESP_ERR_INVALID_STATE if handle is already initialized
+     * @return ESP_ERR_NO_MEM if memory allocation fails
+     * @return ESP_FAIL if I2C initialization fails
      */
     esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle);
 
     /**
-     * @brief Deinitialize the AHT sensor and release resources.
+     * @brief Deinitialize AHT sensor and release resources
      *
-     * Removes I2C device, frees handle, sets `*handle = NULL`.
+     * Removes I2C device and frees the sensor handle.
      *
-     * @param[in,out] handle Double pointer to handle structure (`zh_aht_handle_t **`). Must not be `NULL`. Set to `NULL` on exit.
+     * @param[in,out] handle Pointer to sensor handle to deinitialize (must not be NULL)
      *
-     * @return ESP_OK on success.
-     * @return ESP_ERR_INVALID_ARG if `handle == NULL` or `*handle == NULL` (not initialized).
-     * @return ESP_FAIL if failed to remove I2C device.
+     * @return ESP_OK on success
+     * @return ESP_ERR_INVALID_ARG if handle is NULL
      */
     esp_err_t zh_aht_deinit(zh_aht_handle_t **handle);
 
     /**
-     * @brief Trigger measurement and read temperature & humidity.
+     * @brief Read humidity and temperature from AHT sensor
      *
-     * Sends read command, waits 80 ms, validates CRC/status, and converts to physical units.
+     * Sends read command, receives 7-byte response with CRC validation,
+     * and converts raw data to engineering units.
      *
-     * @param[in] handle Double pointer to handle structure (`zh_aht_handle_t **`). Must not be `NULL`.
-     * @param[out] humidity Pointer to store humidity (%RH).
-     * @param[out] temperature Pointer to store temperature (°C).
+     * @param[in] handle Pointer to sensor handle (must not be NULL)
+     * @param[out] humidity Pointer to store humidity value in percentage (0-100%) (must not be NULL)
+     * @param[out] temperature Pointer to store temperature value in Celsius (-50 to +150°C) (must not be NULL)
      *
-     * @return ESP_OK on success.
-     * @return ESP_ERR_INVALID_ARG if `handle == NULL` or `*handle == NULL` (not initialized) or `humidity == NULL` or `temperature == NULL`.
-     * @return ESP_FAIL if I2C error.
-     * @return ESP_ERR_TIMEOUT if sensor still busy.
-     * @return ESP_ERR_INVALID_CRC if CRC mismatch.
+     * @return ESP_OK on success
+     * @return ESP_ERR_INVALID_ARG if parameters are NULL
+     * @return ESP_ERR_TIMEOUT if sensor does not respond within timeout
+     * @return ESP_ERR_INVALID_CRC if data integrity check fails
+     * @return ESP_FAIL on I2C communication errors
      */
     esp_err_t zh_aht_read(zh_aht_handle_t **handle, float *humidity, float *temperature);
 
     /**
-     * @brief Soft reset the AHT sensor.
+     * @brief Reset AHT sensor via I2C command
      *
-     * Sends reset command and waits 20 ms for recovery.
+     * Sends reset command and waits for sensor recovery.
      *
-     * @param[in] handle Double pointer to handle structure (`zh_aht_handle_t **`). Must not be `NULL`.
+     * @param[in] handle Pointer to sensor handle (must not be NULL)
      *
-     * @return ESP_OK on success.
-     * @return ESP_ERR_INVALID_ARG if `handle == NULL` or `*handle == NULL` (not initialized).
-     * @return ESP_FAIL if I2C error.
+     * @return ESP_OK on success
+     * @return ESP_ERR_INVALID_ARG if handle is NULL
+     * @return ESP_FAIL on I2C communication errors
      */
     esp_err_t zh_aht_reset(zh_aht_handle_t **handle);
 
     /**
-     * @brief Get pointer to internal error statistics.
+     * @brief Get pointer to sensor error statistics
      *
-     * @return Pointer to static statistics structure.
+     * Returns read-only pointer to global statistics structure.
+     *
+     * @return Pointer to statistics structure (valid until reset)
      */
     const zh_aht_stats_t *zh_aht_get_stats(void);
 
     /**
-     * @brief Reset error statistics counter.
+     * @brief Reset all error statistics to zero
      *
-     * Sets `i2c_driver_error = 0`.
+     * Clears all error counters tracked in the global statistics structure.
      */
     void zh_aht_reset_stats(void);
 
