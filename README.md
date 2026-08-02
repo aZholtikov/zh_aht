@@ -1,4 +1,4 @@
-# ESP32 ESP-IDF zh_aht - Humidity & Temperature Sensor Component
+# ESP32 ESP-IDF component for AHT Series Humidity & Temperature Sensor
 
 ## Wiki
 
