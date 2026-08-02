@@ -33,6 +33,12 @@ extern "C"
 {
 #endif
 
+    /**
+     * @brief Opaque handle for AHT sensor driver.
+     *
+     * Incomplete type that encapsulates internal sensor state.
+     * Users interact with this handle exclusively through the public API functions.c
+     */
     typedef struct _zh_aht_handle_t zh_aht_handle_t;
 
     /**

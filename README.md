@@ -14,10 +14,10 @@
 
 ## Features
 
-1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40
-2. Support multiple sensors on one device with [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a)
-3. CRC8 data integrity verification
-4. Error statistics tracking
+1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40.
+2. Support multiple sensors on one device with [zh_pca9548a](https://github.com/aZholtikov/zh_pca9548a).
+3. CRC8 data integrity verification.
+4. Error statistics tracking.
 
 ## Using
 
