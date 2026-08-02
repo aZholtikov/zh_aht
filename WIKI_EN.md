@@ -1,4 +1,4 @@
-# zh_aht - AHT Humidity & Temperature Sensor Component for ESP-IDF
+# zh_aht — AHT Humidity & Temperature Sensor Component for ESP-IDF
 
 ## Table of Contents
 
@@ -24,7 +24,7 @@ The component is designed specifically for ESP32 microcontrollers and uses ESP-I
 
 ## Features
 
-1. **Humidity and Temperature Measurement**: Reads humidity from 0 to 100% and temperature from -40 to +85°C.
+1. **Humidity and Temperature Measurement**: Reads humidity from 0 to 100% and temperature from -40 to +85°C
 2. **I2C Interface**: Uses standard I2C protocol (400 kHz max frequency)
 3. **Configurable I2C Address**: Supports 0x38, 0x39 and 0x44 addresses
 4. **Multiple Model Support**: AHT10, AHT15, AHT20, AHT21, AHT25, AHT30, AHT40
@@ -79,14 +79,17 @@ All functions in this library use double pointer (`zh_aht_handle_t **`) for the 
 
 ### zh_aht_init_config_t Structure
 
-```c
-typedef struct
-{
-    i2c_master_bus_handle_t i2c_handle; // Unique I2C bus handle
-    uint8_t i2c_address;                // Sensor I2C address (0x38, 0x39, or 0x44)
-    uint32_t i2c_frequency;             // Sensor I2C frequency (max 400000 Hz)
-} zh_aht_init_config_t;
-```
+**Description:**
+
+Initialization configuration for AHT sensor (I2C bus, address, frequency).
+
+**Fields (internal):**
+
+| Field | Type | Description / Описание |
+| ------- | ------ | ------------------------ |
+| `i2c_handle` | `i2c_master_bus_handle_t` | Unique I2C bus handle. |
+| `i2c_address` | `uint8_t` | Sensor I2C address (0x38, 0x39, or 0x44). |
+| `i2c_frequency` | `uint32_t` | Sensor I2C frequency (max 400000 Hz). |
 
 Use `ZH_AHT_INIT_CONFIG_DEFAULT()` macro to initialize with default values:
 
@@ -101,20 +104,23 @@ The structure is declared as `typedef struct _zh_aht_handle_t zh_aht_handle_t;` 
 
 **Fields (internal):**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `i2c_master_dev_handle_t` | `dev_handle` | Pointer to I2C device handle. |
+| Field | Type | Description / Описание |
+|-------|------|------------------------|
+| `dev_handle` | `i2c_master_dev_handle_t` | Pointer to I2C device handle. |
 
 ---
 
 ### zh_aht_stats_t Structure
 
-```c
-typedef struct
-{
-    uint32_t i2c_driver_error; // Number of I2C driver errors
-} zh_aht_stats_t;
-```
+**Description:**
+
+Sensor error statistics structure.
+
+**Fields (internal):**
+
+| Field | Type | Description / Описание |
+|-------|------|------------------------|
+| `i2c_driver_error` | `uint32_t` | Number of I2C driver errors. |
 
 ---
 
@@ -153,7 +159,7 @@ Deinitializes the AHT sensor and removes it from the I2C bus. Memory for handle 
 
 **Parameters:**
 
-- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL
 
 **Returns:**
 
@@ -169,9 +175,9 @@ Reads humidity and temperature values from the sensor.
 
 **Parameters:**
 
-- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
-- `humidity` - Pointer to store humidity value (in %)
-- `temperature` - Pointer to store temperature value (in °C)
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL
+- `humidity` - Pointer to store humidity value (in %). Must not be NULL
+- `temperature` - Pointer to store temperature value (in °C). Must not be NULL
 
 **Returns:**
 
@@ -191,7 +197,7 @@ Resets the AHT sensor.
 
 **Parameters:**
 
-- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL.
+- `handle` - Double pointer to unique AHT handle (`zh_aht_handle_t **`). Must not be NULL
 
 **Returns:**
 
@@ -207,102 +213,125 @@ Gets error statistics since last reset.
 
 **Returns:**
 
-- Pointer to the statistics structure
+- Pointer to const `zh_aht_stats_t` structure (valid until `zh_aht_reset_stats()` is called)
 
 ---
 
 ### zh_aht_reset_stats()
 
-Resets error statistics counter.
+Resets all error statistics counters to zero.
 
 ---
 
 ## Usage Examples
 
-### Basic Example: Single Sensor
+### Example: Single Sensor
 
 ```c
 #include "zh_aht.h"
 
-#define I2C_PORT (I2C_NUM_MAX - 1)
+static const int I2C_PORT = I2C_NUM_MAX - 1;
+static const int SDA_IO = GPIO_NUM_21;
+static const int SCL_IO = GPIO_NUM_22;
 
-zh_aht_handle_t *aht_handle = NULL;
+static zh_aht_handle_t *aht_handle = NULL;
 
 void app_main(void)
 {
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    i2c_master_bus_config_t i2c_bus_config = {
+
+    i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
-        .scl_io_num = GPIO_NUM_22,
-        .sda_io_num = GPIO_NUM_21,
+        .scl_io_num = SCL_IO,
+        .sda_io_num = SDA_IO,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
+    i2c_master_bus_handle_t bus_handle = NULL;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+
     zh_aht_init_config_t config = ZH_AHT_INIT_CONFIG_DEFAULT();
-    config.i2c_handle = i2c_bus_handle;
-    zh_aht_init(&config, &aht_handle);
-    float humidity = 0.0;
-    float temperature = 0.0;
+    config.i2c_handle = bus_handle;
+    ESP_ERROR_CHECK(zh_aht_init(&config, &aht_handle));
+
+    float humidity = 0.0f;
+    float temperature = 0.0f;
+
     for (;;)
     {
-        zh_aht_read(&aht_handle, &humidity, &temperature);
-        printf("Humidity: %.2f%%\n", humidity);
-        printf("Temperature: %.2f°C\n", temperature);
-        const zh_aht_stats_t *stats = zh_aht_get_stats();
-        printf("I2C errors: %ld\n", stats->i2c_driver_error);
+        esp_err_t err = zh_aht_read(&aht_handle, &humidity, &temperature);
+        if (err == ESP_OK)
+        {
+            printf("Humidity: %.2f%%\n", humidity);
+            printf("Temperature: %.2f°C\n", temperature);
+            const zh_aht_stats_t *stats = zh_aht_get_stats();
+            printf("I2C errors: %lu\n", stats->i2c_driver_error);
+        }
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
+
+    // Resource cleanup (not reached with for(;;))
+    // zh_aht_deinit(&aht_handle);
+    // i2c_del_master_bus(bus_handle);
 }
 ```
 
 ---
 
-### Multiple Sensors: Using I2C Multiplexer (zh_pca9548a)
+### Example: Multiple Sensors via I2C Multiplexer (zh_pca9548a)
 
 ```c
 #include "zh_pca9548a.h"
 #include "zh_aht.h"
 
-#define I2C_PORT (I2C_NUM_MAX - 1)
+static const int I2C_PORT = I2C_NUM_MAX - 1;
+static const int SDA_IO = GPIO_NUM_21;
+static const int SCL_IO = GPIO_NUM_22;
 
-zh_pca9548a_handle_t pca9548a_handle = {0};
-zh_aht_handle_t *aht_handle_chan_0 = NULL;
-zh_aht_handle_t *aht_handle_chan_1 = NULL;
-zh_aht_handle_t *aht_handle_chan_2 = NULL;
+static zh_pca9548a_handle_t pca9548a_handle = {0};
+static zh_aht_handle_t *aht_handle_chan_0 = NULL;
+static zh_aht_handle_t *aht_handle_chan_1 = NULL;
+static zh_aht_handle_t *aht_handle_chan_2 = NULL;
 
 void app_main(void)
 {
     esp_log_level_set("zh_pca9548a", ESP_LOG_ERROR);
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    i2c_master_bus_config_t i2c_bus_config = {
+
+    i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
-        .scl_io_num = GPIO_NUM_22,
-        .sda_io_num = GPIO_NUM_21,
+        .scl_io_num = SCL_IO,
+        .sda_io_num = SDA_IO,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
+    i2c_master_bus_handle_t bus_handle = NULL;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+
     // Initialize I2C multiplexer
     zh_pca9548a_init_config_t pca_config = ZH_PCA9548A_INIT_CONFIG_DEFAULT();
-    pca_config.i2c_handle = i2c_bus_handle;
+    pca_config.i2c_handle = bus_handle;
     pca_config.i2c_address = 0x70;
-    zh_pca9548a_init(&pca_config, &pca9548a_handle);
+    ESP_ERROR_CHECK(zh_pca9548a_init(&pca_config, &pca9548a_handle));
+
     // Initialize AHT sensors on different channels
     zh_aht_init_config_t aht_config = ZH_AHT_INIT_CONFIG_DEFAULT();
-    aht_config.i2c_handle = i2c_bus_handle;
+    aht_config.i2c_handle = bus_handle;
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_0);
-    zh_aht_init(&aht_config, &aht_handle_chan_0);
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_0));
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
-    zh_aht_init(&aht_config, &aht_handle_chan_1);
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_1));
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
-    zh_aht_init(&aht_config, &aht_handle_chan_2);
-    float humidity = 0.0;
-    float temperature = 0.0;
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_2));
+
+    float humidity = 0.0f;
+    float temperature = 0.0f;
+
     for (;;)
     {
         // Read sensor on channel 0
@@ -310,16 +339,19 @@ void app_main(void)
         zh_aht_read(&aht_handle_chan_0, &humidity, &temperature);
         printf("Sensor 1. Humidity: %.2f%%\n", humidity);
         printf("Sensor 1. Temperature: %.2f°C\n", temperature);
+
         // Read sensor on channel 1
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
         zh_aht_read(&aht_handle_chan_1, &humidity, &temperature);
         printf("Sensor 2. Humidity: %.2f%%\n", humidity);
         printf("Sensor 2. Temperature: %.2f°C\n", temperature);
+
         // Read sensor on channel 2
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
         zh_aht_read(&aht_handle_chan_2, &humidity, &temperature);
         printf("Sensor 3. Humidity: %.2f%%\n", humidity);
         printf("Sensor 3. Temperature: %.2f°C\n", temperature);
+
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }

@@ -1,4 +1,4 @@
-# zh_aht - Компонент датчика влажности и температуры AHT для ESP-IDF
+# zh_aht — Компонент датчика влажности и температуры AHT для ESP-IDF
 
 ## Содержание
 
@@ -79,14 +79,17 @@ I2C_MASTER_ISR_HANDLER_IN_IRAM
 
 ### Структура zh_aht_init_config_t
 
-```c
-typedef struct
-{
-    i2c_master_bus_handle_t i2c_handle; // Уникальный дескриптор шины I2C
-    uint8_t i2c_address;                // Адрес устройства датчика I2C (0x38, 0x39 или 0x44)
-    uint32_t i2c_frequency;             // Частота I2C датчика (макс. 400000 Гц)
-} zh_aht_init_config_t;
-```
+**Описание:**
+
+Конфигурация для инициализации датчика AHT (шина I2C, адрес, частота).
+
+**Поля (внутренние):**
+
+| Поле | Тип | Description / Описание |
+| ------ | ----- | ------------------------ |
+| `i2c_handle` | `i2c_master_bus_handle_t` | Уникальный дескриптор шины I2C. |
+| `i2c_address` | `uint8_t` | Адрес устройства датчика I2C (0x38, 0x39 или 0x44). |
+| `i2c_frequency` | `uint32_t` | Частота I2C датчика (макс. 400000 Гц). |
 
 Используйте макрос `ZH_AHT_INIT_CONFIG_DEFAULT()` для инициализации значениями по умолчанию:
 
@@ -101,20 +104,23 @@ typedef struct
 
 **Поля (внутренние):**
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `i2c_master_dev_handle_t` | `dev_handle` | Указатель на дескриптор устройства I2C. |
+| Поле | Тип | Description / Описание |
+|------|-----|------------------------|
+| `dev_handle` | `i2c_master_dev_handle_t` | Указатель на дескриптор устройства I2C. |
 
 ---
 
 ### Структура zh_aht_stats_t
 
-```c
-typedef struct
-{
-    uint32_t i2c_driver_error; // Количество ошибок драйвера I2C
-} zh_aht_stats_t;
-```
+**Описание:**
+
+Структура статистики ошибок датчика.
+
+**Поля (внутренние):**
+
+| Поле | Тип | Description / Описание |
+|------|-----|------------------------|
+| `i2c_driver_error` | `uint32_t` | Количество ошибок драйвера I2C. |
 
 ---
 
@@ -124,8 +130,8 @@ typedef struct
 
 **Параметры:**
 
-- `config` - Указатель на структуру конфигурации инициализации AHT
-- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Если указатель NULL, память будет выделена.
+- `config` - Указатель на структуру конфигурации инициализации AHT. Не должен быть NULL
+- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Должен быть NULL
 
 **Возвращает:**
 
@@ -153,7 +159,7 @@ zh_aht_init(&config, &aht_handle);
 
 **Параметры:**
 
-- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Не должен быть NULL.
+- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Не должен быть NULL
 
 **Возвращает:**
 
@@ -169,9 +175,9 @@ zh_aht_init(&config, &aht_handle);
 
 **Параметры:**
 
-- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Не должен быть NULL.
-- `humidity` - Указатель для хранения значения влажности (в %)
-- `temperature` - Указатель для хранения значения температуры (в °C)
+- `handle` - Двойной указатель на уникальный дескриптор AHT (`zh_aht_handle_t **`). Не должен быть NULL
+- `humidity` - Указатель для хранения значения влажности (в %). Не должен быть NULL
+- `temperature` - Указатель для хранения значения температуры (в °C). Не должен быть NULL
 
 **Возвращает:**
 
@@ -207,102 +213,125 @@ zh_aht_init(&config, &aht_handle);
 
 **Возвращает:**
 
-- Указатель на структуру статистики
+- Указатель на константную структуру `zh_aht_stats_t` (действителен до вызова `zh_aht_reset_stats()`)
 
 ---
 
 ### zh_aht_reset_stats()
 
-Сбрасывает счетчик статистики ошибок.
+Сбрасывает все счётчики статистики ошибок, устанавливая их в ноль.
 
 ---
 
-## Примеры использования
+## Usage Examples / Примеры использования
 
-### Базовый пример: Один датчик
+### Пример: Один датчик
 
 ```c
 #include "zh_aht.h"
 
-#define I2C_PORT (I2C_NUM_MAX - 1)
+static const int I2C_PORT = I2C_NUM_MAX - 1;
+static const int SDA_IO = GPIO_NUM_21;
+static const int SCL_IO = GPIO_NUM_22;
 
-zh_aht_handle_t *aht_handle = NULL;
+static zh_aht_handle_t *aht_handle = NULL;
 
 void app_main(void)
 {
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    i2c_master_bus_config_t i2c_bus_config = {
+
+    i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
-        .scl_io_num = GPIO_NUM_22,
-        .sda_io_num = GPIO_NUM_21,
+        .scl_io_num = SCL_IO,
+        .sda_io_num = SDA_IO,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
+    i2c_master_bus_handle_t bus_handle = NULL;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+
     zh_aht_init_config_t config = ZH_AHT_INIT_CONFIG_DEFAULT();
-    config.i2c_handle = i2c_bus_handle;
-    zh_aht_init(&config, &aht_handle);
-    float humidity = 0.0;
-    float temperature = 0.0;
+    config.i2c_handle = bus_handle;
+    ESP_ERROR_CHECK(zh_aht_init(&config, &aht_handle));
+
+    float humidity = 0.0f;
+    float temperature = 0.0f;
+
     for (;;)
     {
-        zh_aht_read(&aht_handle, &humidity, &temperature);
-        printf("Влажность: %.2f%%\n", humidity);
-        printf("Температура: %.2f°C\n", temperature);
-        const zh_aht_stats_t *stats = zh_aht_get_stats();
-        printf("Ошибки I2C: %ld\n", stats->i2c_driver_error);
+        esp_err_t err = zh_aht_read(&aht_handle, &humidity, &temperature);
+        if (err == ESP_OK)
+        {
+            printf("Влажность: %.2f%%\n", humidity);
+            printf("Температура: %.2f°C\n", temperature);
+            const zh_aht_stats_t *stats = zh_aht_get_stats();
+            printf("Ошибки I2C: %lu\n", stats->i2c_driver_error);
+        }
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
+
+    // Очистка ресурсов (не достигается в примере с for(;;))
+    // zh_aht_deinit(&aht_handle);
+    // i2c_del_master_bus(bus_handle);
 }
 ```
 
 ---
 
-### Несколько датчиков: Использование I2C мультиплексатора (zh_pca9548a)
+### Пример: Несколько датчиков через I2C мультиплексор (zh_pca9548a)
 
 ```c
 #include "zh_pca9548a.h"
 #include "zh_aht.h"
 
-#define I2C_PORT (I2C_NUM_MAX - 1)
+static const int I2C_PORT = I2C_NUM_MAX - 1;
+static const int SDA_IO = GPIO_NUM_21;
+static const int SCL_IO = GPIO_NUM_22;
 
-zh_pca9548a_handle_t pca9548a_handle = {0};
-zh_aht_handle_t *aht_handle_chan_0 = NULL;
-zh_aht_handle_t *aht_handle_chan_1 = NULL;
-zh_aht_handle_t *aht_handle_chan_2 = NULL;
+static zh_pca9548a_handle_t pca9548a_handle = {0};
+static zh_aht_handle_t *aht_handle_chan_0 = NULL;
+static zh_aht_handle_t *aht_handle_chan_1 = NULL;
+static zh_aht_handle_t *aht_handle_chan_2 = NULL;
 
 void app_main(void)
 {
     esp_log_level_set("zh_pca9548a", ESP_LOG_ERROR);
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-    i2c_master_bus_config_t i2c_bus_config = {
+
+    i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
-        .scl_io_num = GPIO_NUM_22,
-        .sda_io_num = GPIO_NUM_21,
+        .scl_io_num = SCL_IO,
+        .sda_io_num = SDA_IO,
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    i2c_new_master_bus(&i2c_bus_config, &i2c_bus_handle);
-    // Инициализация I2C мультиплексатора
+    i2c_master_bus_handle_t bus_handle = NULL;
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
+
+    // Инициализация I2C мультиплексора
     zh_pca9548a_init_config_t pca_config = ZH_PCA9548A_INIT_CONFIG_DEFAULT();
-    pca_config.i2c_handle = i2c_bus_handle;
+    pca_config.i2c_handle = bus_handle;
     pca_config.i2c_address = 0x70;
-    zh_pca9548a_init(&pca_config, &pca9548a_handle);
+    ESP_ERROR_CHECK(zh_pca9548a_init(&pca_config, &pca9548a_handle));
+
     // Инициализация датчиков AHT на разных каналах
     zh_aht_init_config_t aht_config = ZH_AHT_INIT_CONFIG_DEFAULT();
-    aht_config.i2c_handle = i2c_bus_handle;
+    aht_config.i2c_handle = bus_handle;
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_0);
-    zh_aht_init(&aht_config, &aht_handle_chan_0);
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_0));
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
-    zh_aht_init(&aht_config, &aht_handle_chan_1);
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_1));
+
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
-    zh_aht_init(&aht_config, &aht_handle_chan_2);
-    float humidity = 0.0;
-    float temperature = 0.0;
+    ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_2));
+
+    float humidity = 0.0f;
+    float temperature = 0.0f;
+
     for (;;)
     {
         // Считывание с датчика на канале 0
@@ -310,16 +339,19 @@ void app_main(void)
         zh_aht_read(&aht_handle_chan_0, &humidity, &temperature);
         printf("Датчик 1. Влажность: %.2f%%\n", humidity);
         printf("Датчик 1. Температура: %.2f°C\n", temperature);
+
         // Считывание с датчика на канале 1
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
         zh_aht_read(&aht_handle_chan_1, &humidity, &temperature);
         printf("Датчик 2. Влажность: %.2f%%\n", humidity);
         printf("Датчик 2. Температура: %.2f°C\n", temperature);
+
         // Считывание с датчика на канале 2
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
         zh_aht_read(&aht_handle_chan_2, &humidity, &temperature);
         printf("Датчик 3. Влажность: %.2f%%\n", humidity);
         printf("Датчик 3. Температура: %.2f°C\n", temperature);
+
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
