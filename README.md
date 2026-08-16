@@ -25,7 +25,7 @@ In an existing project, run the following command to install the component:
 
 ```text
 cd ../your_project/components
-git clone https://github.com/aZholtikov/zh_aht.git
+git clone https://github.com/aZholtikov/zh_aht
 ```
 
 In the application, add the component:
