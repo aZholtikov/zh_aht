@@ -239,7 +239,6 @@ static zh_aht_handle_t *aht_handle = NULL;
 void app_main(void)
 {
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-
     i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
@@ -250,14 +249,11 @@ void app_main(void)
     };
     i2c_master_bus_handle_t bus_handle = NULL;
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
-
     zh_aht_init_config_t config = ZH_AHT_INIT_CONFIG_DEFAULT();
     config.i2c_handle = bus_handle;
     ESP_ERROR_CHECK(zh_aht_init(&config, &aht_handle));
-
     float humidity = 0.0f;
     float temperature = 0.0f;
-
     for (;;)
     {
         esp_err_t err = zh_aht_read(&aht_handle, &humidity, &temperature);
@@ -270,7 +266,6 @@ void app_main(void)
         }
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
-
     // Resource cleanup (not reached with for(;;))
     // zh_aht_deinit(&aht_handle);
     // i2c_del_master_bus(bus_handle);
@@ -298,7 +293,6 @@ void app_main(void)
 {
     esp_log_level_set("zh_pca9548a", ESP_LOG_ERROR);
     esp_log_level_set("zh_aht", ESP_LOG_ERROR);
-
     i2c_master_bus_config_t bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .i2c_port = I2C_PORT,
@@ -309,29 +303,22 @@ void app_main(void)
     };
     i2c_master_bus_handle_t bus_handle = NULL;
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &bus_handle));
-
     // Initialize I2C multiplexer
     zh_pca9548a_init_config_t pca_config = ZH_PCA9548A_INIT_CONFIG_DEFAULT();
     pca_config.i2c_handle = bus_handle;
     pca_config.i2c_address = 0x70;
     ESP_ERROR_CHECK(zh_pca9548a_init(&pca_config, &pca9548a_handle));
-
     // Initialize AHT sensors on different channels
     zh_aht_init_config_t aht_config = ZH_AHT_INIT_CONFIG_DEFAULT();
     aht_config.i2c_handle = bus_handle;
-
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_0);
     ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_0));
-
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
     ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_1));
-
     zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
     ESP_ERROR_CHECK(zh_aht_init(&aht_config, &aht_handle_chan_2));
-
     float humidity = 0.0f;
     float temperature = 0.0f;
-
     for (;;)
     {
         // Read sensor on channel 0
@@ -339,19 +326,16 @@ void app_main(void)
         zh_aht_read(&aht_handle_chan_0, &humidity, &temperature);
         printf("Sensor 1. Humidity: %.2f%%\n", humidity);
         printf("Sensor 1. Temperature: %.2f°C\n", temperature);
-
         // Read sensor on channel 1
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_1);
         zh_aht_read(&aht_handle_chan_1, &humidity, &temperature);
         printf("Sensor 2. Humidity: %.2f%%\n", humidity);
         printf("Sensor 2. Temperature: %.2f°C\n", temperature);
-
         // Read sensor on channel 2
         zh_pca9548a_set(&pca9548a_handle, ZH_PCA9548A_CHAN_NUM_2);
         zh_aht_read(&aht_handle_chan_2, &humidity, &temperature);
         printf("Sensor 3. Humidity: %.2f%%\n", humidity);
         printf("Sensor 3. Temperature: %.2f°C\n", temperature);
-
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
