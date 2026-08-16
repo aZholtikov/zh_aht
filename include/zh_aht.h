@@ -85,6 +85,7 @@ extern "C"
      *
      * @return ESP_OK on success
      * @return ESP_ERR_INVALID_ARG if handle is NULL
+     * @return ESP_FAIL on I2C communication errors
      */
     esp_err_t zh_aht_deinit(zh_aht_handle_t **handle);
 
