@@ -1,7 +1,7 @@
 /**
  * @file zh_aht.h
  *
- * @brief Driver for AHT series temperature and humidity sensors (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40)
+ * @brief Driver for AHT series temperature and humidity sensors (AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40).
  *
  * Provides I2C-based communication with AHT sensors including initialization,
  * data reading with CRC validation, reset functionality, and error statistics.
@@ -42,7 +42,7 @@ extern "C"
     typedef struct _zh_aht_handle_t zh_aht_handle_t;
 
     /**
-     * @brief Configuration structure for AHT sensor initialization
+     * @brief Configuration structure for AHT sensor initialization.
      */
     typedef struct
     {
@@ -52,7 +52,7 @@ extern "C"
     } zh_aht_init_config_t;
 
     /**
-     * @brief Structure containing sensor error statistics
+     * @brief Structure containing sensor error statistics.
      */
     typedef struct
     {
@@ -60,7 +60,7 @@ extern "C"
     } zh_aht_stats_t;
 
     /**
-     * @brief Initialize AHT sensor and establish I2C communication
+     * @brief Initialize AHT sensor and establish I2C communication.
      *
      * Allocates handle, configures I2C device, probes sensor presence,
      * and sends initialization command if required.
@@ -77,7 +77,7 @@ extern "C"
     esp_err_t zh_aht_init(const zh_aht_init_config_t *config, zh_aht_handle_t **handle);
 
     /**
-     * @brief Deinitialize AHT sensor and release resources
+     * @brief Deinitialize AHT sensor and release resources.
      *
      * Removes I2C device and frees the sensor handle.
      *
@@ -90,7 +90,7 @@ extern "C"
     esp_err_t zh_aht_deinit(zh_aht_handle_t **handle);
 
     /**
-     * @brief Read humidity and temperature from AHT sensor
+     * @brief Read humidity and temperature from AHT sensor.
      *
      * Sends read command, receives 7-byte response with CRC validation,
      * and converts raw data to engineering units.
@@ -108,7 +108,7 @@ extern "C"
     esp_err_t zh_aht_read(zh_aht_handle_t **handle, float *humidity, float *temperature);
 
     /**
-     * @brief Reset AHT sensor via I2C command
+     * @brief Reset AHT sensor via I2C command.
      *
      * Sends reset command and waits for sensor recovery.
      *
@@ -121,7 +121,7 @@ extern "C"
     esp_err_t zh_aht_reset(zh_aht_handle_t **handle);
 
     /**
-     * @brief Get pointer to sensor error statistics
+     * @brief Get pointer to sensor error statistics.
      *
      * Returns read-only pointer to global statistics structure.
      *
@@ -130,7 +130,7 @@ extern "C"
     const zh_aht_stats_t *zh_aht_get_stats(void);
 
     /**
-     * @brief Reset all error statistics to zero
+     * @brief Reset all error statistics to zero.
      *
      * Clears all error counters tracked in the global statistics structure.
      */
