@@ -1,9 +1,5 @@
 # ESP32 ESP-IDF component for AHT Series Humidity & Temperature Sensor
 
-## SAST Tools
-
-[PVS-Studio](https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) - static analyzer for C, C++, C#, and Java code.
-
 ## Features
 
 1. Support of AHT10/AHT15/AHT20/AHT21/AHT25/AHT30/AHT40.
