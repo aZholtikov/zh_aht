@@ -7,15 +7,6 @@
 3. CRC8 data integrity verification.
 4. Error statistics tracking.
 
-## Note
-
-Enable the following settings in menuconfig:
-
-```text
-I2C_ISR_IRAM_SAFE
-I2C_MASTER_ISR_HANDLER_IN_IRAM
-```
-
 ## Using
 
 In an existing project, run the following command to install the component:

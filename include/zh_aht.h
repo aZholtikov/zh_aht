@@ -11,9 +11,6 @@
  * - Automatic sensor initialization and probe detection
  * - CRC8 data integrity verification
  * - Error statistics tracking
- *
- * @note Requires ESP-IDF v5.0+ with I2C master driver
- * @note Enable I2C_ISR_IRAM_SAFE and I2C_MASTER_ISR_HANDLER_IN_IRAM in menuconfig
  */
 
 #pragma once
@@ -22,6 +19,8 @@
 #include "esp_log.h"
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_heap_caps.h"
 
 #define ZH_AHT_INIT_CONFIG_DEFAULT() \
     {                                \
@@ -37,7 +36,7 @@ extern "C"
      * @brief Opaque handle for AHT sensor driver.
      *
      * Incomplete type that encapsulates internal sensor state.
-     * Users interact with this handle exclusively through the public API functions.c
+     * Users interact with this handle exclusively through the public API functions.
      */
     typedef struct _zh_aht_handle_t zh_aht_handle_t;
 
